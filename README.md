@@ -30,9 +30,10 @@ If there is another part of the Time Machine process happening, it will be shown
 
 
 
-The purpose of the script `textbar-timemachine.sh` is to parse `tmutil status` into the friendlier format shown at the top.
+The purpose of the script `anybar-timemachine.sh` is to parse `tmutil status` into the friendlier format shown at the top.
 
-The files `bytes2readable.sh`, `commaformat.sh`, and `seconds2readable.sh` are all files that are used by `textbar-timemachine.sh`
+The files `bytes2readable.sh`, `commaformat.sh`, and `seconds2readable.sh` are all files that are used by `
+ar-timemachine.sh`
 
 ## Some things to note:
 
@@ -52,7 +53,7 @@ However, you could have multiple local drives, or multiple Time Capsule drives. 
 
 I recommend putting all four of the `.sh` files in `~/Documents/timemachine` ($HOME/$SUBDIR in the script).
 
-Make sure they are executable: `chmod a+rx <files>`
+Make sure they are executable: `chmod a+rx ~/Documents/timemachine/*.sh`
 
 Once you have them installed, download and install [AnyBar](https://github.com/tonsky/AnyBar).
 
