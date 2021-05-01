@@ -11,7 +11,7 @@ Here is what it looks like when a Time Machine backup is active:
 
 When Time Machine is not backing up, the dot will be hollow. On error, it will show a red exclamation mark.
 
-I have made this script because sometimes my TimeMachine starts to [fail](https://www.google.com/search?client=firefox-b-d&q=time+machine+already+in+use) 
+I have made this script because sometimes my TimeMachine starts to [fail](https://www.google.com/search?q=time+machine+already+in+use) 
 
 If there is another part of the Time Machine process happening, it will be shown there in a CamelCasedWord, such as:
 
