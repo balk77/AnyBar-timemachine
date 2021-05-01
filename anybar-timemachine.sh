@@ -9,32 +9,38 @@
 
 NAME="$0:t:r"
 
+## Define sub directory under $HOME, should end with a /
+# for instance "Documents/timemachine/"
+SUBDIR="Documents/timemachine/"
+
+
+## Check if last run is too old
+## Default = one day: 24 * 60 * 60 seconds:
+TM_AGE=$((24*60*60))
+TM_AGE=1
+
+## MQTT publication command if error
+# 0=clear, 1=error
+MQTT_COMMAND="/opt/homebrew/bin/mqtt pub -h 192.168.0.9 -t macbook/timemachine/error -m "
+
+## AnyBar colors
+ANYBAR_COPYING="green"
+ANYBAR_IDLE="hollow"
+ANYBAR_ERROR="exclamation"
+
+## AnyBar parameters
+ANYBAR_HOST="localhost"
+ANYBAR_PORT="1738"
+# find number of running AnyBar processes
+ANYBAR_PROC=$(ps aux | grep -v grep | grep -ci anybar)
+
 if [ -e "$HOME/.path" ]
 then
 	source "$HOME/.path"
 else
-	PATH=/usr/local/scripts:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin
+	PATH=/usr/local/scripts:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin:$PWD:$HOME/$SUBDIR
 fi
 
-function msg {
-
-	if (( $+commands[growlnotify] ))
-	then
-
-		# 'growlnotify' if found, will be used.
-		# You might also want to try 'https://github.com/julienXX/terminal-notifier'
-
-		( growlnotify \
-			--appIcon "Time Machine" \
-			--identifier "$NAME" \
-			--message "$@" \
-			--title "$NAME" 2>&1 ) >/dev/null
-
-	fi
-
-	echo "$NAME: $@"
-
-}
 
 zmodload zsh/datetime
 
@@ -52,40 +58,70 @@ else
 fi
 
 	# If there is a local Time Machine mounted, this will show the mount point.
-LOCAL=$(tmutil destinationinfo | egrep -A1 '^Kind *: Local$'	| awk -F'/' '/Mount Point/{print $NF}')
+LOCAL=$(tmutil destinationinfo | grep 'Mount Point'      | awk -F'/' '/Volumes/{print $NF}')
 
 if [[ "$LOCAL" == "" ]]
 then
-	TIME_MACHINE_MNTPNT=""
+	TIME_MACHINE_MNTPNT="x"
 else
 	TIME_MACHINE_MNTPNT="/Volumes/$LOCAL"
 fi
 
-	####### The 'PREVIOUS_DESTINATION_FILE' file should have two lines, like so:
-	# 7618460C-3E5B-4829-BB24-37F9F0F23824
-	# /Volumes/Time Machine Backups
-PREVIOUS_DESTINATION_FILE="$HOME/.$NAME.previous-destination.txt"
 
-		# first line of the file
-	PREVIOUS_DESTINATION_ID=$(head -1 "$PREVIOUS_DESTINATION_FILE")
 
-		# last line of the file
-	PREVIOUS_DESTINATION_NAME=$(tail -1 "$PREVIOUS_DESTINATION_FILE")
+####### The 'PREVIOUS_DESTINATION_FILE' file should have two lines, like so:
+# 7618460C-3E5B-4829-BB24-37F9F0F23824
+# /Volumes/Time Machine Backups
+PREVIOUS_DESTINATION_FILE="$HOME/$SUBDIR.$NAME.previous-destination.txt"
 
-		# both combined for easier reference
-	PREVIOUS_DESTINATION="$PREVIOUS_DESTINATION_NAME"
+# first line of the file
+PREVIOUS_DESTINATION_ID=$(head -1 "$PREVIOUS_DESTINATION_FILE")
 
-	# save the phase that we found 'last time' so we can compare them
-PREVIOUS_PHASE_FILE="$HOME/.${NAME}.previous-phase.txt"
+# last line of the file
+PREVIOUS_DESTINATION_NAME=$(tail -1 "$PREVIOUS_DESTINATION_FILE")
 
-		# this will have the actual name of the previous phase
-	PREVIOUS_PHASE=$(head -1 "$PREVIOUS_PHASE_FILE")
+# both combined for easier reference
+PREVIOUS_DESTINATION="$PREVIOUS_DESTINATION_NAME"
 
-	# this is used to track when Time Machine last ran, so I can tell how long it has been since it ran
-LAST_RUN_LOG="$HOME/.$NAME.lastrun.txt"
+# save the phase that we found 'last time' so we can compare them
+PREVIOUS_PHASE_FILE="$HOME/$SUBDIR.${NAME}.previous-phase.txt"
 
-	# this shows the current phase in one CamelCaseWord
+# this will have the actual name of the previous phase
+PREVIOUS_PHASE=$(head -1 "$PREVIOUS_PHASE_FILE")
+
+# this is used to track when Time Machine last ran, so I can tell how long it has been since it ran
+LAST_RUN_LOG="$HOME/$SUBDIR.$NAME.lastrun.txt"
+
+# this shows the current phase in one CamelCaseWord
 PHASE=$(tmutil currentphase)
+
+## Start AnyBar if not running
+if [[ $ANYBAR_PROC -eq 0 ]]
+then
+	echo "Starting AnyBar"
+	open -a AnyBar
+fi
+
+# ## if phase is not "Copying" and previous run is too old:
+# # issue an error
+# if [[ "$PHASE" != "Copying" ]]
+# then
+# 	LAST_RUN_TIME=$(head -1 "$LAST_RUN_LOG" 2>/dev/null || echo '0')
+# 	LAST_RUN_TIME=$(head -1 "$LAST_RUN_LOG" )
+# 	## Check if last run is too old
+# 	## Default = one day: 24 * 60 * 60 seconds: 
+
+# 	if [[ $(($EPOCHSECONDS-$LAST_RUN_TIME)) > $TM_AGE ]]
+# 	then
+# 		echo "Successful TimeMachine run is too old"
+# 		echo -n $ANYBAR_ERROR | nc -4u -w0 $ANYBAR_HOST $ANYBAR_PORT
+# 		echo $(MQTT_COMMAND 1)
+# 		exit 0
+	
+# 	fi
+# fi
+
+
 
 if [[ "$PHASE" != "$PREVIOUS_PHASE" ]]
 then
@@ -93,7 +129,7 @@ then
 	if [[ "$PHASE" == "BackupNotRunning" ]]
 	then
 
-		msg "Time Machine has finished"
+		echo "Time Machine has finished"
 
 		if (( $+commands[when-timemachine-finishes.sh] ))
 		then
@@ -108,13 +144,19 @@ then
 
 		# If you want to run commands when Time Machine has finished,
 		# you can add them here:
+		
+		echo -n $ANYBAR_IDLE | nc -4u -w0 $ANYBAR_HOST $ANYBAR_PORT
+		## Reset the MQTT error topic
+		echo $(MQTT_COMMAND 0)
 
 
 
 	elif [[ "$PREVIOUS_PHASE" == "BackupNotRunning" ]]
 	then
 
-		msg "Time Machine has started"
+		echo "Time Machine has started"
+		## Reset the MQTT error topic
+		echo $(MQTT_COMMAND 0)
 
 	fi
 
@@ -134,13 +176,13 @@ then
 			# convert the "last run" time to get a date in YYYY/MM/DD format
 		LAST_RUN_TIME_READABLE_DATE=$(strftime "%Y/%m/%d" "$LAST_RUN_TIME")
 
-			# get the "current time" in a YYYY/MM/DD format
+		# get the "current time" in a YYYY/MM/DD format
 		CURRENT_TIME_READABLE_DATE=$(strftime "%Y/%m/%d" "$LAST_RUN_TIME")
 
-			# get the time in 12 hour format with hour and minute
+		# get the time in 12 hour format with hour and minute
 		LAST_RUN_TIME_READABLE_TIME=$(strftime "%-l:%M %p" "$LAST_RUN_TIME")
 
-			# see if the date is today's date or previous date
+		# see if the date is today's date or previous date
 		if [[ "$CURRENT_TIME_READABLE_DATE" == "$LAST_RUN_TIME_READABLE_DATE" ]]
 		then
 				LAST_RUN_TIME_READABLE="Today at $LAST_RUN_TIME_READABLE_TIME"
@@ -155,16 +197,22 @@ then
 		DIFF_READABLE=$(seconds2readable.sh "$DIFF")
 
 			# Here is where you set the time elapsed before you get warned with a special status line
-			#  7,200 seconds = 2 hours or 14,400 seconds = 4 hours
-		if [ "$DIFF" -ge "14400" ]
+			## Default = one day: 24 * 60 * 60 seconds: 
+
+	
+		if [ "$DIFF" -ge $TM_AGE ]
 		then
 
 				# The '⚠️' will go on the menu bar, then there is a newline for the rest of the message
 			echo "⚠️\nTime Machine has not run in\n${DIFF_READABLE}\n----\nLast Run: ${LAST_RUN_TIME_READABLE}\nLast Backup To:\n${PREVIOUS_DESTINATION}"
+			echo -n $ANYBAR_ERROR | nc -4u -w0 $ANYBAR_HOST $ANYBAR_PORT
+			echo $(MQTT_COMMAND 1)
 
 		else
-				## Newline keeps it off menu bar
+			## Newline keeps it off menu bar
 			echo "\nLast backup to '${PREVIOUS_DESTINATION}'\n${LAST_RUN_TIME_READABLE} (${DIFF_READABLE} ago)"
+			## Reset the MQTT error topic
+			echo $(MQTT_COMMAND 0)
 
 		fi
 
@@ -174,6 +222,8 @@ then
 		echo "$EPOCHSECONDS" >| "$LAST_RUN_LOG"
 
 		echo "\nJust finished"
+		## Reset the MQTT error topic
+		echo $(MQTT_COMMAND 0)
 
 	fi
 
@@ -200,8 +250,8 @@ then
 	exit 0
 fi
 
-	# file where we store the entire output of the 'tmutil status' information
-CURRENT_STATUS="$HOME/.$NAME.status.txt"
+# file where we store the entire output of the 'tmutil status' information
+CURRENT_STATUS="$HOME/$SUBDIR.$NAME.status.txt"
 
 ( tmutil status 2>&1 ) >| "$CURRENT_STATUS"
 
@@ -299,12 +349,15 @@ if [[ "$PHASE" == "Copying" ]]
 then
 		# this is where we are most of the time when running
 	echo " $PERCENT_OF_BYTES $DESTINATION_NAME"
-	rm -f "$LAST_RUN_LOG"
+	# rm -f "$LAST_RUN_LOG"
+	echo -n $ANYBAR_COPYING | nc -4u -w0 $ANYBAR_HOST $ANYBAR_PORT
+	
 
 else
 		# if we get here, we are not copying
 	echo " $PHASE"
-	rm -f "$LAST_RUN_LOG"
+	echo -n $ANYBAR_IDLE | nc -4u -w0 $ANYBAR_HOST $ANYBAR_PORT
+	# rm -f "$LAST_RUN_LOG"
 fi
 
 ## This is already in menu bar so we don't need to include it in the drop-down
@@ -313,6 +366,7 @@ fi
 ## here is where we output all the info in the format we want
 
 echo "Phase: $PHASE
+
 Destination: $DESTINATION_NAME
 ----
 Total: $TOTAL_TO_COPY ($FILES_SO_FAR_READABLE files)
