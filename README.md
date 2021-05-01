@@ -1,6 +1,6 @@
 # AnyBar-timemachine
 
-An [AnyBar](https://github.com/tonsky/AnyBar) script to monitor the status of your Time Machine / Time Capsule backups. This script is based on the work of [@tjluoma](https://github.com/tjluoma/textbar-timemachine) but uses AnyBar instead.
+An [AnyBar](https://github.com/tonsky/AnyBar) script to monitor the status of your Time Machine / Time Capsule backups. This script is based on the work of [@tjluoma](https://github.com/tjluoma/textbar-timemachine) but uses AnyBar instead. It also uses [MQTT](https://github.com/hivemq/mqtt-cli) to export status but that is optional. 
 
 -----
 
@@ -33,7 +33,7 @@ If there is another part of the Time Machine process happening, it will be shown
 The purpose of the script `anybar-timemachine.sh` is to parse `tmutil status` into the friendlier format shown at the top.
 
 The files `bytes2readable.sh`, `commaformat.sh`, and `seconds2readable.sh` are all files that are used by `
-ar-timemachine.sh`
+anybar-timemachine.sh`
 
 ## Some things to note:
 
