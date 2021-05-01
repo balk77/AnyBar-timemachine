@@ -9,7 +9,9 @@ Here is what it looks like when a Time Machine backup is active:
 <img width="85" alt="Screenshot 2021-05-01 at 20 53 55" src="https://user-images.githubusercontent.com/10166350/116792179-5c5ce780-aabf-11eb-8f47-42cc7945f4e0.png">
 
 
-When Time Machine is not backing up, there’s nothing shown there.
+When Time Machine is not backing up, the dot will be hollow. On error, it will show a red exclamation mark.
+
+I have made this script because sometimes my TimeMachine starts to [fail](https://www.google.com/search?client=firefox-b-d&q=time+machine+already+in+use) 
 
 If there is another part of the Time Machine process happening, it will be shown there in a CamelCasedWord, such as:
 
