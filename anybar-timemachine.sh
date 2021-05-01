@@ -22,6 +22,7 @@ TM_AGE=1
 ## MQTT publication command if error
 # 0=clear, 1=error
 MQTT_COMMAND="/opt/homebrew/bin/mqtt pub -h 192.168.0.9 -t macbook/timemachine/error -m "
+# set to MQTT_COMMAND="" when not required
 
 ## AnyBar colors
 ANYBAR_COPYING="green"
@@ -147,7 +148,8 @@ then
 		
 		echo -n $ANYBAR_IDLE | nc -4u -w0 $ANYBAR_HOST $ANYBAR_PORT
 		## Reset the MQTT error topic
-		echo $(MQTT_COMMAND 0)
+		MQTT_ERROR=0
+		
 
 
 
@@ -156,8 +158,9 @@ then
 
 		echo "Time Machine has started"
 		## Reset the MQTT error topic
-		echo $(MQTT_COMMAND 0)
-
+		MQTT_ERROR=0
+	else
+		MQTT_ERROR=0
 	fi
 
 		# lastly, update the 'PREVIOUS_PHASE_FILE'
@@ -206,13 +209,13 @@ then
 				# The '⚠️' will go on the menu bar, then there is a newline for the rest of the message
 			echo "⚠️\nTime Machine has not run in\n${DIFF_READABLE}\n----\nLast Run: ${LAST_RUN_TIME_READABLE}\nLast Backup To:\n${PREVIOUS_DESTINATION}"
 			echo -n $ANYBAR_ERROR | nc -4u -w0 $ANYBAR_HOST $ANYBAR_PORT
-			echo $(MQTT_COMMAND 1)
+			MQTT_ERROR=1
 
 		else
 			## Newline keeps it off menu bar
 			echo "\nLast backup to '${PREVIOUS_DESTINATION}'\n${LAST_RUN_TIME_READABLE} (${DIFF_READABLE} ago)"
 			## Reset the MQTT error topic
-			echo $(MQTT_COMMAND 0)
+			MQTT_ERROR=0
 
 		fi
 
@@ -223,7 +226,7 @@ then
 
 		echo "\nJust finished"
 		## Reset the MQTT error topic
-		echo $(MQTT_COMMAND 0)
+		MQTT_ERROR=0
 
 	fi
 
@@ -351,6 +354,7 @@ then
 	echo " $PERCENT_OF_BYTES $DESTINATION_NAME"
 	# rm -f "$LAST_RUN_LOG"
 	echo -n $ANYBAR_COPYING | nc -4u -w0 $ANYBAR_HOST $ANYBAR_PORT
+	MQTT_ERROR=0
 	
 
 else
@@ -358,6 +362,7 @@ else
 	echo " $PHASE"
 	echo -n $ANYBAR_IDLE | nc -4u -w0 $ANYBAR_HOST $ANYBAR_PORT
 	# rm -f "$LAST_RUN_LOG"
+	MQTT_ERROR=0
 fi
 
 ## This is already in menu bar so we don't need to include it in the drop-down
@@ -380,5 +385,14 @@ ETA: $ETA
 ## Now we just include the entire output of 'tmutil status' just so we can see it.
 
 cat "$CURRENT_STATUS"
+
+if [[ -z "$MQTT_COMMAND" ]]
+then
+	echo "MQTT not requested"
+else
+	echo "issue MQTT topic"
+	eval "${MQTT_COMMAND} ${MQTT_ERROR}"
+	
+fi
 
 exit 0
