@@ -111,7 +111,8 @@ LAST_RUN_LOG="$HOME/$SUBDIR.$NAME.lastrun.txt"
 PHASE=$(tmutil currentphase)
 
 ## Start AnyBar if not running
-if [[ $ANYBAR_PROC -eq 0 ]]
+echo $ANYBAR_PROC "process"
+if [[ $ANYBAR_PROC==0 ]]
 then
 	echo "Starting AnyBar"
 	open -a AnyBar
