@@ -1,10 +1,24 @@
 #!/usr/bin/env zsh -f
-# Purpose: show Growl for Time Machine current status
-# From:	Timothy J. Luoma
-# Mail:	luomat at gmail dot com
-# Date:	2019-07-10
+# Purpose: show Time Machine current status in AnyBar
+# Based on https://github.com/tjluoma/textbar-timemachine from:	Timothy J. Luoma
+# Modified by S. Balkenende
 
-## Note:	This has been tested with 1 local Time Machine drive and 1 Time Capsule drive.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+
+## Note:	This has been tested with 1 remote Time Machine drive.
 ##			Not sure how it would work if there are multiple of either of those
 
 NAME="$0:t:r"
